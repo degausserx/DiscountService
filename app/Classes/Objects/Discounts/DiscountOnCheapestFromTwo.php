@@ -2,9 +2,8 @@
 
 namespace App\Objects\Discounts;
 
-use App\DataModels\OrderDataModel;
+use App\DataModels\Order;
 use App\Builders\DiscountBuilder;
-use Exception;
 
 class DiscountOnCheapestFromTwo extends Discount {
 
@@ -21,9 +20,13 @@ class DiscountOnCheapestFromTwo extends Discount {
 
     }
 
+    // you can do stuff with the order before being processed
+    protected function begin(Order $order) {
+        return $order;
+    }
+
     // you can do stuff with the final order (discounts applied) before being returned
-    // maybe this in itself could make for a good reason for extending classes
-    protected function finalize(OrderDataModel $order) {
+    protected function finalize(Order $order) {
         return $order;
     }
           

@@ -2,10 +2,10 @@
 
 namespace App\DataModels;
 
-use App\DataModels\CustomerDataModel;
-use App\DataModels\ProductDataModel;
+use App\DataModels\Customer;
+use App\DataModels\Product;
 
-class OrderDataModel extends DataModel {
+class Order extends DataModel {
     protected $required = array('id', 'items', 'total', 'customerid');
 
     public $id;

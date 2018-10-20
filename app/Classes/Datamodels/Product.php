@@ -2,7 +2,7 @@
 
 namespace App\DataModels;
 
-class ProductDataModel extends DataModel {
+class Product extends DataModel {
     protected $required = array('id', 'description', 'category', 'price');
 
     public $id;

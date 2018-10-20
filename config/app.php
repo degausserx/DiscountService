@@ -177,10 +177,6 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
-
-        // Custom Serive Providers...
-        App\Providers\DiscountServiceProvider::class,
-
     ],
 
     /*

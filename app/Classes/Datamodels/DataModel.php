@@ -6,7 +6,7 @@ use ArrayAccess;
 use Exception;
 
 // generic data class
-abstract class DataModel implements ArrayAccess {
+class DataModel implements ArrayAccess {
 
     // data 
     protected $data = array();
@@ -34,17 +34,22 @@ abstract class DataModel implements ArrayAccess {
         }
 
         if (count($this->required) > 0) {
-            throw new Exception('Required model properties not supplied');
+            throw new Exception('Required model properties not supplied: ' . count($this->required));
         }
     }
 
     // return a group of DataModel instances
-    public static function generateGroup(Array $data, $model) {
+    public static function makeGroup(Array $data) {
         $array = array();
         foreach ($data as $item) {
-            $array[] = new $model($item);
+            $array[] = new self($item);
         }
         return $array;
+    }
+
+    // return a group of DataModel instances
+    public static function make(Array $data) {
+        return new self($item);
     }
 
     // sanatize property names

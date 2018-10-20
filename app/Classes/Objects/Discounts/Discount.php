@@ -2,7 +2,7 @@
 
 namespace App\Objects\Discounts;
 
-use App\DataModels\OrderDataModel;
+use App\DataModels\Order;
 use App\Builders\DiscountBuilder;
 use Exception;
 
@@ -25,19 +25,24 @@ class Discount {
 
     // add function from derived classes. idk if this is better than making $functions protected
     // this does give me control on making sure the function sent to the object is called last, if at all
-    protected function addFunction($function = null) {
+    final protected function addFunction($function = null) {
         if (!is_callable($function)) throw new Exception("Argument mismatch upon object instantiation");
         $this->addedFunctions[] = $function;
     }
 
+    // function to be extended.
+    protected function begin(Order $order) {
+        return $order;
+    }
+
     // function to be extended. could also add a way to pass a function call from outside this class, but its not really needed atm
-    protected function finalize(OrderDataModel $order) {
+    protected function finalize(Order $order) {
         return $order;
     }
 
     // handle unwrapping the queries
-    final public function generate(OrderDataModel $order) {
-        $this->order = $order;
+    final public function generate(Order $order) {
+        $order = $this->begin($order);
 
         // get core functionality, add inline functionality
         $functions = $this->addedFunctions;
@@ -71,10 +76,10 @@ class Discount {
         return $builder;
     }
 
-    final private function apply(DiscountBuilder $discountBuilder, OrderDataModel $order) {
+    final private function apply(DiscountBuilder $discountBuilder, Order $order) {
 
 
-        // the tricky part
+        // TODO: the tricky part
         // $discountBuilder for discount data
         // $this->order for all order properties. TCB: Sunday
 

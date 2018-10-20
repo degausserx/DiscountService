@@ -2,7 +2,7 @@
 
 namespace App\DataModels;
 
-class CustomerDataModel extends DataModel {
+class Customer extends DataModel {
     protected $required = array('id', 'name', 'since', 'revenue');
 
     public $id;
