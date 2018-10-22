@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Contracts\Repositories\CustomerRepositoryContract;
 use App\DataModels\Customer;
 use Countable;
+use Storage;
 
 class CustomerRepository implements CustomerRepositoryContract, Countable {
 
@@ -19,7 +20,7 @@ class CustomerRepository implements CustomerRepositoryContract, Countable {
     }
 
     private function setSource() {
-        $this->customers = json_decode(\Storage::disk('local')->get('customers.json'), true);
+        $this->customers = json_decode(Storage::disk('local')->get('customers.json'), true);
         $this->customers = Customer::makeGroup($this->customers);
     }
 
@@ -32,7 +33,8 @@ class CustomerRepository implements CustomerRepositoryContract, Countable {
     }
 
     public function get(Int $int) {
-        return $this->findById($int);
+        if ($int < 1) return $this->getAll();
+        return (isset($this->customers[$int])) ? $this->customers[$int] : null;
     }
 
     public function getAll() {

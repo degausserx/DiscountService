@@ -13,7 +13,7 @@ class DataModel implements ArrayAccess {
     protected $required = array();
 
     // constructor
-    public function __construct(Array $data = array()) {
+    protected function __construct(Array $data = array()) {
 
         foreach ($data as $key => $value) {
             // valid propert can be created
@@ -42,14 +42,14 @@ class DataModel implements ArrayAccess {
     public static function makeGroup(Array $data) {
         $array = array();
         foreach ($data as $item) {
-            $array[] = new self($item);
+            $array[] = new static($item);
         }
         return $array;
     }
 
     // return a group of DataModel instances
     public static function make(Array $data) {
-        return new self($item);
+        return new static($data);
     }
 
     // sanatize property names

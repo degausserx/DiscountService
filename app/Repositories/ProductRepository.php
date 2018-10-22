@@ -20,7 +20,7 @@ class ProductRepository implements ProductRepositoryContract, Countable {
     }
 
     private function setSource() {
-        $this->products = json_decode(Storage::disk('local')->get('products.json'), true);
+        $this->products = json_decode(\Storage::disk('local')->get('products.json'), true);
         $this->products = Product::makeGroup($this->products);
     }
 

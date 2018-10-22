@@ -8,7 +8,11 @@ interface DiscountServiceContainerContract {
 
     public function count();
 
-    public function setSource($source);
+    public function setDiscounts($source);
+
+    public function clearDiscounts();
+
+    public function clearOrders();
 
     public function addOrder(Order $order);
 
@@ -18,6 +22,6 @@ interface DiscountServiceContainerContract {
 
     public function getOrders();
 
-    public function make();
+    public function generate();
 
 }
