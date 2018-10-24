@@ -288,11 +288,9 @@ class DiscountService implements DiscountServiceContract, Countable {
                     if (isset($discountObject->getFilterBy()['product']['productSum'])) {
                         if (($productSum = $discountObject->getFilterBy()['product']['productSum']) !== null) {
                             foreach ($productSum as $property => $piece) {
-                                foreach ($goodItems as $item) {
-                                    if (!$this->{$property}($piece, count($goodItems))) {
-                                        return false;
-                                        // fail
-                                    }
+                                if (!$this->{$property}($piece, count($goodItems))) {
+                                    return false;
+                                    // fail
                                 }
                             }
                         }
