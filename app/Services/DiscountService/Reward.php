@@ -91,7 +91,7 @@ class Reward {
             $each = $this->discount->getEach();
             if (isset($each['totalItems'])) $totalItems = $each['totalItems'];
             if (isset($each['totalSpent'])) $totalSpent = $each['totalSpent'];
-            $limit = ($this->discount->getLimit()) ? $this->discount->getLimit() : 1;
+            $limit = ($this->discount->getLimit() !== null) ? $this->discount->getLimit() : 1;
 
             foreach ($order->items as &$item) {
                 if (in_array($item['product-id'], $data)) {
@@ -105,10 +105,9 @@ class Reward {
                         $totalPrice = $item['total'];
                         $addedItems = floor($totalPrice / $totalSpent);
                     }
-
+  
                     // the number of times this can be applied
                     if ($addedItems > $limit && $limit > 0) $addedItems = $limit;
-
                     if ($totalItems) {
                         $item['quantity'] += $addedItems;
                         $item['quantity'] = strval($item['quantity']);
