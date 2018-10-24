@@ -78,9 +78,12 @@ class DiscountHookLoader {
                 $object->rewardNumber(1);
                 $object->applyRewardTo('productLine');
                 $object->filterBy('category.id', 2);
-                $object->limit(0);
-                $object->each('totalItems', 5);
-                return $object->name('Buy51Free')->description('For every product of category Switches, when you buy five, you get a sixth for free');
+
+                $object2 = DiscountBuilder::build();
+                $object2->each('totalItems', 5);
+                $object2->limit(0);
+
+                return $object->name('Buy51Free')->build($object2)->description('For every product of category Switches, when you buy five, you get a sixth for free');
             }),
 
 

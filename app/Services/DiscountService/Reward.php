@@ -17,6 +17,7 @@ class Reward {
         return number_format(((Float) $num * ($discount / 100)), 2);
     }
 
+    // discounts *limit not yet integrated with discounts, would only apply to the productline though*
     public function discount(Order $order, Array $data) {
         if ($number = $this->discount->getRewardNumber()) {
             // discounts can be applied anywhere. we'll default to the order
@@ -26,7 +27,7 @@ class Reward {
             $i = 0;
 
             if ($applyRewardTo == 'order') {
-                $order->total -= $this->getDiscount($order['total'], $number);
+                $order->total -= $this->getDiscount($order->total, $number);
                 $order->total = number_format($order->total, 2);
             }
 
@@ -80,6 +81,7 @@ class Reward {
         $order->total = strval($order->total);
     }
 
+    // extra items
     public function item(Order $order, Array $data) {
         if ($number = $this->discount->getRewardNumber()) {
             
@@ -89,7 +91,7 @@ class Reward {
             $each = $this->discount->getEach();
             if (isset($each['totalItems'])) $totalItems = $each['totalItems'];
             if (isset($each['totalSpent'])) $totalSpent = $each['totalSpent'];
-            $limit = $this->discount->getLimit();
+            $limit = ($this->discount->getLimit()) ? $this->discount->getLimit() : 1;
 
             foreach ($order->items as &$item) {
                 if (in_array($item['product-id'], $data)) {
@@ -104,9 +106,13 @@ class Reward {
                         $addedItems = floor($totalPrice / $totalSpent);
                     }
 
+                    // the number of times this can be applied
                     if ($addedItems > $limit && $limit > 0) $addedItems = $limit;
-                    $item['quantity'] += $addedItems;
-                    $item['quantity'] = strval($item['quantity']);
+
+                    if ($totalItems) {
+                        $item['quantity'] += $addedItems;
+                        $item['quantity'] = strval($item['quantity']);
+                    }
 
                 }
             }

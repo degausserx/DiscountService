@@ -21,6 +21,9 @@ class DiscountService implements DiscountServiceContract, Countable {
     private $discounts = array();
     private $orders = array();
 
+    private $success = array();
+    private $fail = array();
+
     public function __constuct() {
         $this->discountRewardService = new Rewards();
         $this->discountFilterService = new Filter();
@@ -76,7 +79,7 @@ class DiscountService implements DiscountServiceContract, Countable {
         return $this;
     }
 
-
+    // help methods for the filtering to come >>
     protected function moreThan($discountValue, $orderValue) {
         return $orderValue > $discountValue;
     }
@@ -96,11 +99,6 @@ class DiscountService implements DiscountServiceContract, Countable {
     protected function equals($discountValue, $orderValue) {
         return $orderValue == $discountValue;
     }
-
-    protected $success = array();
-    protected $fail = array();
-    protected $tried = array();
-
 
     private function applyDiscount(Discount $discountObject) {
 
@@ -142,7 +140,6 @@ class DiscountService implements DiscountServiceContract, Countable {
 
                 $this->success = array();
                 $this->fail = array();
-                $this->tried = array();
 
                 // cycle through filters
                 if (is_array($discountObject->getFilterBy())):
@@ -153,13 +150,12 @@ class DiscountService implements DiscountServiceContract, Countable {
                     $this->fail['categoryEquality'] = array();
 
                     foreach ($discountObject->getFilterBy() as $filterKey => $filterType):
-
                         // if you specify without any filters
                         if (!count($filterType)) return false;
 
+
                         // lifetime spend
                         if ($filterKey == 'lifetimeSpend' && is_array($filterType)):
-                            $this->tried[$filterKey] = 1;
                             $lifetimeSpend = $customer->revenue;
                             foreach ($filterType as $key => $value):
                                 if (!$this->{$key}($value, $lifetimeSpend)):
@@ -174,7 +170,6 @@ class DiscountService implements DiscountServiceContract, Countable {
 
                         // order
                         elseif ($filterKey == 'order' && is_array($filterType)):
-                            $this->tried[$filterKey] = 1;
                             foreach ($filterType as $key => $value):
                                 if (is_array($value)):
                                     foreach ($value as $propery => $item):
@@ -188,7 +183,7 @@ class DiscountService implements DiscountServiceContract, Countable {
                                         endif;
                                     endforeach;
                                 endif;
-                            endforeach;;
+                            endforeach;
 
 
 
@@ -198,12 +193,12 @@ class DiscountService implements DiscountServiceContract, Countable {
 
                                 // the ID part
                                 if ($key == 'id' && $value):
-                                    $this->tried['productIds'] = 1;
                                     $this->fail['productIds'] = array();
                                     $itemId = explode('|', $value);
                                     foreach ($itemId as $valueId):
                                         if (!in_array($valueId, $mainProductIds)):
                                             $this->fail['productIds'][] = $valueId;
+                                            // fail
                                         else:
                                             $this->success['productIds'][] = $valueId;
                                         endif;
@@ -216,7 +211,6 @@ class DiscountService implements DiscountServiceContract, Countable {
 
                                 // the Equality part
                                 elseif (in_array($key, array('price', 'itemSum')) && $value):
-                                    $this->tried['productEquality'] = 1;
                                     $arrayItem = ($key == 'price') ? 'unit-price' : 'quantity';
                                     foreach ($value as $property => $piece):
                                         $mItem = null;
@@ -224,6 +218,7 @@ class DiscountService implements DiscountServiceContract, Countable {
                                             $mItem = $item['product-id'];
                                             if (!$this->{$property}($piece, $mainProducts[$mItem][$arrayItem])):
                                                 $this->fail['productEquality'][$mItem][] = $key;
+                                                // fail
                                             else:
                                                 $this->success['productEquality'][$mItem][] = $key;
                                             endif;
@@ -245,12 +240,12 @@ class DiscountService implements DiscountServiceContract, Countable {
 
                                 // the ID part
                                 if ($key == 'id' && $value):
-                                    $this->tried['categoryIds'] = 1;
                                     $this->fail['categoryIds'] = array();
                                     $itemId = explode('|', $value);
                                     foreach ($itemId as $valueId):
                                         if (!in_array($valueId, $mainCategoryIds)):
                                             $this->fail['categoryIds'][] = $valueId;
+                                            // fail
                                         else:
                                             $this->success['categoryIds'][] = $valueId;
                                         endif;
@@ -258,28 +253,6 @@ class DiscountService implements DiscountServiceContract, Countable {
                                     if (count($itemId) <= count($this->fail['categoryIds'])):
                                         return false;
                                     endif;
-
-
-
-                                // the Equality part
-                                elseif (in_array($key, array('quantity', 'itemSum')) && $value):
-                                    $this->tried['categoryEquality'] = 1;
-                                    $arrayItem = ($key == 'price') ? 'unit-price' : 'quantity';
-                                    foreach ($value as $property => $piece):
-                                        $mItem = null;
-                                        foreach ($order->items as $item):
-                                            $mItem = $item['product-id'];
-                                            $cItem = $mainProducts[$mItem]['category'];
-                                            if (!$this->{$property}($piece, $mainProducts[$mItem][$arrayItem])):
-                                                $this->fail['categoryEquality'][$mItem][] = $key;
-                                            else:
-                                                $this->success['categoryEquality'][$mItem][] = $key;
-                                            endif;
-                                        endforeach;
-                                        if (isset($this->fail['categoryEquality'][$mItem]) && count($order->items) <= count($this->fail['categoryEquality'][$mItem])):
-                                            $this->fail['categoryIds'][] = $mItem;
-                                        endif;
-                                    endforeach;
                                 endif;
 
 
@@ -295,7 +268,7 @@ class DiscountService implements DiscountServiceContract, Countable {
                     // final filtering of valid products
                     $goodItems = array();
 
-                    //item filtering
+                    //item filtering after knmowing what fails.
                     foreach ($order->products as $productObject) {
                         foreach ($productObject as $product) {
                             $id = $product->id;
@@ -318,6 +291,7 @@ class DiscountService implements DiscountServiceContract, Countable {
                                 foreach ($goodItems as $item) {
                                     if (!$this->{$property}($piece, count($goodItems))) {
                                         return false;
+                                        // fail
                                     }
                                 }
                             }
@@ -331,8 +305,10 @@ class DiscountService implements DiscountServiceContract, Countable {
                         }
                     }
 
+                    // invalidate last of questionable items
                     if (isset($this->fail['order'])) return false;
                     if (isset($this->fail['lifetimeSpend'])) return false;
+
 
                     // the discount is good for this order, apply the reward
                     if ($rewardType = $discountObject->getRewardType()) {
