@@ -21,12 +21,15 @@ class OrderRepository implements OrderRepositoryContract, Countable {
 
     private function addOrderDependencies(Order $order) {
         // single customer
-        $order->customer = $this->customerRepository->findById($order);
-        
+        $result = $this->customerRepository->findById($order->id);
+        $key = key($result);
+        $order->customer = $result[$key];
+
+
         // multiple products
         $products = array();
         foreach ($order->items as $item) {
-            $products[] = $this->productRepository->findById($item);
+            $products[] = $this->productRepository->findById($item['product-id']);
         }
 
         $order->products = $products;

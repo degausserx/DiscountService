@@ -45,6 +45,12 @@ class DiscountsController extends Controller {
         // get processed orders
         $ordersWithDiscountApplied = $this->discountContainer->getOrders();
 
+        // clear orders in discount container
+        // $this->discountContainer->clearOrders();
+
+        // clear discounts in discounts container
+        // $this->discountContainer->clearDiscounts();
+
         // response
         if (!empty($ordersWithDiscountApplied)) return response()->json($ordersWithDiscountApplied);
 

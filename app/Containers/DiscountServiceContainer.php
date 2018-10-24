@@ -45,6 +45,7 @@ class DiscountServiceContainer implements DiscountServiceContainerContract, Coun
     }
 
     public function clearOrders() {
+        $this->discountService->clearOrders();
         $this->orders = array();
     }
 

@@ -12,4 +12,5 @@ class Order extends DataModel {
     public $items;
     public $total;
     public $customerid;
+    public $discounts = array();
 }

@@ -10,41 +10,33 @@ use App\Objects\Discounts\Discount;
 // if more than one product matches the filter, then the first found product under the filter is used as the "give" if applied to category, unless
 // it's used together with cheapest, like: 'applyTo' =? 'category|cheapest'
 
-    //      'group' => '',                          Default is 0. Only 1 discount from any given group is eligable to apply a discount to the order
-    //                                              Discounts are processed according to groupId from lowest to highest
     //      'description' => '',                    A description of the discount
     //      'name' => '',                           Name of the Discount
-    //      'rewardType' => '',                     options are: reduction (N), discount (N%) or give (N items)
+    //      'rewardType' => '',                     options are: discount (N%) or item (N items)
     //      'rewardNumber' =>                       uses the N from above
-    //      'applyRewardTo' => '',                  options are: order, singleItem, singleItemQuantity
-    //                                              Reductions always apply to the order. Give always applies to a singleItemQuantity
-    //      'priority' => ''                        options are: cheapest, dearest <-- default cheapest
+    //      'applyRewardTo' => '',                  options are: order, productLine, cheapestItem, cheapestProduct
+    //                                              "Reward types" Item always applies to a productLine
     //      'limit' => '',                          default is 1. limit the number of times the reward may be applied. 0 is infinite
     //      'each'
     //          'totalSpent' => '',                 if N or more has been spent in total. default is 0 for disabled
-    //          'totalItems' => '',                 every N or more items have been purchased in total. default is 0 for disabled
-    //          'applyTo' => '',                    options are: order, singleItem, singleItemQuantity, category
+    //          'totalItems' => '',                 every N or more filtered items. default is 0 for disabled
     //      'filterBy' =>
     //          'product' =>
-    //              'id' => '',                         separated by |
+    //              'id' => '',                         separated by | // filter by product
     //              'price' => ''
-    //                  'moreThan' => '',               filter by equality: more than N
+    //                  'moreThan' => '',               filter by equality: more than N // price per item
     //                  'lessThan' => '',               filter by equality: less than N
     //                  'equals' => '',                 filter by equality: equal to N
     //              'itemSum' => ''
-    //                  'moreThan' => '',               filter by equality: more than N
-    //                  'lessThan' => '',               filter by equality: less than N
-    //                  'equals' => '',                 filter by equality: equal to N
+    //                  'moreThan' => '',               filter by equality: more than N // total items per id
+    //                  'lessThan' => '',               filter by equality: less than N // 
+    //                  'equals' => '',                 filter by equality: equal to N  //
+    //              'productSum' => ''
+    //                  'moreThan' => '',               filter by equality: more than N // total items per id
+    //                  'lessThan' => '',               filter by equality: less than N // 
+    //                  'equals' => '',                 filter by equality: equal to N  //
     //          'category' =>
-    //              'id' => '',                         separated by |
-    //              'price' => ''
-    //                  'moreThan' => '',               filter by equality: more than N
-    //                  'lessThan' => '',               filter by equality: less than N
-    //                  'equals' => '',                 filter by equality: equal to N
-    //              'itemSum' => ''
-    //                  'moreThan' => '',               filter by equality: more than N
-    //                  'lessThan' => '',               filter by equality: less than N
-    //                  'equals' => '',                 filter by equality: equal to N
+    //              'id' => '',                         separated by | // filter by group
     //          'order'
     //              'price' => ''
     //                  'moreThan' => '',               filter by equality: more than N
@@ -58,7 +50,6 @@ use App\Objects\Discounts\Discount;
     //              'moreThan' => '',                   filter by item lifetime spend: more than N
     //              'lessThan' => '',                   filter by item lifetime spend: less than N
     //              'equals' => '',                     filter by item lifetime spend: equal to N 
-    //      'enabled' => ''                             default is true, set to false to disable Discount
 
 class DiscountHookLoader {
 
@@ -71,25 +62,24 @@ class DiscountHookLoader {
             // A 10% discount has been applied to your full order because you have spent over €1000
             new Discount(DiscountBuilder::build()
                 ->name('TotalSpent')
-                ->group(0)
                 ->rewardType('discount')
-                ->rewardNumber('10')
+                ->rewardNumber(10)
                 ->applyRewardTo('order')
-                ->filterBy('lifetimeSpend.moreThanEquals', 1000)
-                ->limit(1)
+                ->filterBy('lifetimeSpend.moreThanEqual', 1000)
                 ->description('A 10% discount has been applied to your full order because you have spent over €1000')
             ),
 
             // METHOD 2: the callable method!!
             // For every product of category Switches, when you buy five, you get a sixth for free
+            
             new Discount(function() {
                 $object = DiscountBuilder::build();
-                $object->group(5);
-                $object->applyTo('product');
+                $object->rewardType('item');
+                $object->rewardNumber(1);
+                $object->applyRewardTo('productLine');
+                $object->filterBy('category.id', 2);
                 $object->limit(0);
-                $object->filterBy('category', '2');
-                $object->totalItems(5);
-                $object->give(1);
+                $object->each('totalItems', 5);
                 return $object->name('Buy51Free')->description('For every product of category Switches, when you buy five, you get a sixth for free');
             }),
 
@@ -99,7 +89,7 @@ class DiscountHookLoader {
             // If you buy two or more products of category Tools, you get a 20% discount on the cheapest product
             new DiscountOnCheapestFromTwo(DiscountBuilder::build()->name('newNameForDiscount')),
 
-
+/*
             // METHOD 4: the merge method!!!!
             // object functionality allows one instance to take the values of another.
             // This happens because the DiscountBuilder class uses composition, essentially feeding off anything you throw at it
@@ -108,21 +98,19 @@ class DiscountHookLoader {
 
            new Discount(function() {
                 $filter = DiscountBuilder::build();
-                $filter->group(10);
-                $filter->filterBy('category', '1|2');
-                $filter->filterBy('moreThanEqual', '100');
-                $filter->applyTo('product');
-                $filter->limit(1);
+                $filter->filterBy('order.price.moreThanEqual', 1000);
+                $filter->filterBy('category.id', 7);
+                $filter->rewardType('discount');
+                $filter->rewardNumber('5');
+                $filter->applyRewardTo('order');
+                $filter->limit(5);
 
-                $criteria = DiscountBuilder::build(); // <-- you can enter the $filter variable directly, or merge during method chaining
-                $criteria->reduction(5);
-                $criteria->totalSpent(100);
-                $criteria->limit(0); // overwrite. using 0 limit with totalSpent means 'for every totalSpent'
-                $criteria->applyTo('category'); // overwrite
+                $criteria = DiscountBuilder::build();
+                $criteria->limit(1);
 
                 // you can inject more builders at any point:
-                return DiscountBuilder::build($filter)->name('Some name')->build($criteria)
-                ->description('For every product of category Switches, when you buy five, you get a sixth for free');
+                return DiscountBuilder::build($filter)->name('Some name')->build($criteria)->name('new name')
+                ->description('RANDOM CAPS BASED CATEGORY');
 
             }),
 
@@ -130,7 +118,9 @@ class DiscountHookLoader {
             // a combination of 1 and 4, allowing you to create more DiscountBuilders available from class methods or arrays (shared amongst the class),
             // then combining what is needed with some build() calls.
             // I think method 3 can also be powerful
+            */
         );
+
     }
 
 }
