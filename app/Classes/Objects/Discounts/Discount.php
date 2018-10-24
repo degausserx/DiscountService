@@ -52,7 +52,7 @@ class Discount {
     // get data
     final public function getData() {
 
-        if (!$this->function || !empty($this->addedFunctions)) {
+        if ($this->function || !empty($this->addedFunctions)) {
             $this->processBuilders();
         }
 

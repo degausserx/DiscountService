@@ -20,7 +20,6 @@ class DiscountBuilder extends Builder {
         'rewardType' => '',
         'rewardNumber' => '',
         'applyRewardTo' => '',
-        'priority' => '',
         'limit' => '',            
         'each' => array(
             'totalSpent' => '',

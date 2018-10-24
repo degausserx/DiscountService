@@ -42,9 +42,12 @@ class CustomerRepository implements CustomerRepositoryContract, Countable {
     }
 
     public function findById($x) {
-        return array_filter($this->customers, function($customer) use ($x) {
+        $result = array_filter($this->customers, function($customer) use ($x) {
             return $customer->id == $x;
         });
+        if (empty($result)) return null;
+        $key = key($result);
+        return $result[$key];
     }
 
 }

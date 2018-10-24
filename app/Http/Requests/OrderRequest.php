@@ -29,7 +29,7 @@ class OrderRequest extends FormRequest
 
         $rules = array(
             'json_files' => 'required',
-            'json_files.*' => 'file|max:10240',
+            'json_files.*' => 'file|max:1024',
         );
 
         return $rules;
@@ -45,7 +45,7 @@ class OrderRequest extends FormRequest
         $messages = array();
         
         $messages['json_files'] = 'A file is required';
-        $messages['json_files.*.max'] = 'can\'t be larger than 10MB';
+        $messages['json_files.*.max'] = 'can\'t be larger than 1MB';
         $messages['json_files.*.mimetypes'] = 'must be in JSON format';
         $messages['json_files.*.mimes'] = 'must be in JSON format';
         $messages['json_files.*.file'] = 'must represent a file type';
