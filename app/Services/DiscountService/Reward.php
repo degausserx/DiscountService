@@ -24,18 +24,20 @@ class Reward {
             $applyRewardTo = $this->discount->getApplyRewardTo() ?? 'order';
 
             $limit = $this->discount->getLimit();
-            $i = 0;
+            $minus = 0;
 
             if ($applyRewardTo == 'order') {
-                $order->total -= $this->getDiscount($order->total, $number);
-                $order->total = number_format($order->total, 2);
+                $minus = $this->getDiscount($order->total, $number);
+                $order->total -= $minus;
             }
 
             elseif ($applyRewardTo == 'productLine') {
                 foreach ($order->items as &$item) {
                     if (in_array($item['product-id'], $data)) {
-                        $item['total'] -= $this->getDiscount($item['total'], $number);
+                        $minus = $this->getDiscount($item['total'], $number);
+                        $item['total'] -= $minus;
                         $item['total'] = number_format($item['total'], 2);
+                        $order->total = $order->total - $minus;
                     }
                 }
             }
@@ -50,8 +52,10 @@ class Reward {
 
                 foreach ($items as &$item) {
                     if (in_array($item['product-id'], $data)) {
-                        $item['unit-price'] -= $this->getDiscount($item['unit-price'], $number);
+                        $minus = $this->getDiscount($item['unit-price'], $number);
+                        $item['unit-price'] -= $minus;
                         $item['unit-price'] = number_format($item['unit-price'], 2);
+                        $order->total = $order->total - $minus;
                         break;
                     }
                 }
@@ -67,13 +71,17 @@ class Reward {
 
                 foreach ($items as &$item) {
                     if (in_array($item['product-id'], $data)) {
-                        $item['total'] -= $this->getDiscount($item['total'], $number);
+                        $minus = $this->getDiscount($item['total'], $number);
+                        $item['total'] -= $minus;
                         $item['total'] = number_format($item['total'], 2);
+                        $order->total = $order->total - $minus;
                         break;
                     }
                 }
 
             }
+
+            $order->total = number_format($order->total, 2);
 
             $order->discounts[] = $this->discount->getDescription();
         }
