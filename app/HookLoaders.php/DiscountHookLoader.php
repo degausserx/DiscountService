@@ -77,10 +77,8 @@ class DiscountHookLoader {
                 $object->rewardType('item');
                 $object->rewardNumber(1);
                 $object->applyRewardTo('productLine');
-                $object->filterBy('category.id', 2);
+                $object->filterBy('category.id', '2');
                 $object->filterBy('product.itemSum.moreThanEqual', 5);
-                //$object->filterBy('category.id', 1);
-
                 $object2 = DiscountBuilder::build();
                 $object2->each('totalItems', 5);
                 $object2->limit(0);
@@ -94,6 +92,7 @@ class DiscountHookLoader {
             // Here we're using an instance of "DiscountOnCheapestFromTwo", and applying our own data on top of built in functionality
             // If you buy two or more products of category Tools, you get a 20% discount on the cheapest product
             new DiscountOnCheapestFromTwo(DiscountBuilder::build()->name('newNameForDiscount')),
+            
 
         );
 

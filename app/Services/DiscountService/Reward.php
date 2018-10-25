@@ -97,8 +97,8 @@ class Reward {
         if ($number = $this->discount->getRewardNumber()) {
             
             $applyRewardTo = 'productLine';
+            $added = false;
 
-            $order->discounts[] = $this->discount->getDescription();
             $each = $this->discount->getEach();
             if (isset($each['totalItems'])) $totalItems = $each['totalItems'];
             if (isset($each['totalSpent'])) $totalSpent = $each['totalSpent'];
@@ -122,10 +122,13 @@ class Reward {
                     if ($totalItems) {
                         $item['quantity'] += $addedItems;
                         $item['quantity'] = strval($item['quantity']);
+                        if ($addedItems > 0) $added = true;
                     }
 
                 }
             }
+
+            if ($added) $order->discounts[] = $this->discount->getDescription();
 
         }
     }
