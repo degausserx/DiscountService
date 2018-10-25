@@ -84,6 +84,7 @@ class DiscountService implements DiscountServiceContract, Countable {
         if ($filter = $discountObject->getFilterBy()) {
             $filterOrders = array_filter($this->orders, function($order) use ($discountObject) {
 
+                $this->discountFilterService->clear($order);
                 $this->discountFilterService->addItemData($order);
 
                 // cycle through filters
@@ -93,29 +94,32 @@ class DiscountService implements DiscountServiceContract, Countable {
                         // if you specify without any filters
                         if (!count($filterType)) return false;
 
+                        if (is_array($filterType)):
 
-                        // lifetime spend
-                        if ($filterKey == 'lifetimeSpend' && is_array($filterType)):
-                            if (!$this->discountFilterService->lifetimeSpend($filterType)):
+                            // lifetime spend
+                            if ($filterKey == 'lifetimeSpend'):
+                                if (!$this->discountFilterService->lifetimeSpend($filterType)):
+                                    return false;
+                                endif;
+
+                            // order
+                            elseif ($filterKey == 'order'):
+                                if (!$this->discountFilterService->order($filterType)):
+                                    return false;
+                                endif;
+
+                            // product
+                            elseif ($filterKey == 'product'):
+                                $this->discountFilterService->product($filterType);
+
+                            // category
+                            elseif ($filterKey == 'category'):
+                                $this->discountFilterService->category($filterType);
+                            else:
+                                // no valid filter type
                                 return false;
                             endif;
 
-                        // order
-                        elseif ($filterKey == 'order' && is_array($filterType)):
-                            if (!$this->discountFilterService->order($filterType)):
-                                return false;
-                            endif;
-
-                        // product
-                        elseif ($filterKey == 'product' && is_array($filterType)):
-                            $this->discountFilterService->product($filterType);
-
-                        // category
-                        elseif ($filterKey == 'category' && is_array($filterType)):
-                            $this->discountFilterService->category($filterType);
-                        else:
-                            // no valid filter type
-                            return false;
                         endif;
                     endforeach;
 

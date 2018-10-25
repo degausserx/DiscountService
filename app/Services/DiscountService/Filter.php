@@ -7,7 +7,6 @@ use App\Datamodels\Order;
 
 class Filter {
 
-    private $success = array();
     private $fail = array();
     private $order;
 
@@ -23,7 +22,6 @@ class Filter {
     }
 
     public function clear() {
-        $this->success = array();
         $this->fail = array();
         $this->order = null;
     }
@@ -65,10 +63,6 @@ class Filter {
         $this->fail['categoryIds'] = array();
         $this->fail['productEquality'] = array();
         $this->fail['categoryEquality'] = array();
-        $this->success['productIds'] = array();
-        $this->success['categoryIds'] = array();
-        $this->success['productEquality'] = array();
-        $this->success['categoryEquality'] = array();
 
     }
 
@@ -83,7 +77,6 @@ class Filter {
     public function validOptions() {
         if (count($this->fail['productEquality']) ||
             count($this->fail['productIds']) ||
-            count($this->fail['categoryEquality']) ||
             count($this->fail['categoryIds'])) {
             return false;
         }
@@ -118,7 +111,6 @@ class Filter {
             endif;
         endforeach;
 
-        $this->success['lifetimeSpend'] = 1;
         return true;
     }
 
@@ -137,7 +129,6 @@ class Filter {
             endif;
         endforeach;
 
-        $this->success['order'] = 1;
         return true;
     }
 
@@ -165,8 +156,6 @@ class Filter {
                         $mItem = $item['product-id'];
                         if (!$this->{$property}($piece, $this->mainProducts[$mItem][$arrayItem])):
                             $this->fail['productEquality'][$mItem][] = $key;
-                        else:
-                            $this->success['productEquality'][$mItem][] = $key;
                         endif;
                     endforeach;
                     if (isset($this->fail['productEquality'][$mItem]) && count($this->order->items) <= count($this->fail['productEquality'][$mItem])):
@@ -183,8 +172,6 @@ class Filter {
         foreach ($ids as $productId):
             if (!in_array($productId, $itemId)):
                 $this->fail[$key][] = $productId;
-            else:
-                $this->success[$key][] = $productId;
             endif;
         endforeach;
     }
