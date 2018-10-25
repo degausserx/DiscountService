@@ -77,8 +77,9 @@ class DiscountHookLoader {
                 $object->rewardType('item');
                 $object->rewardNumber(1);
                 $object->applyRewardTo('productLine');
-                $object->filterBy('category.id', '2');
+                $object->filterBy('category.id', '1');
                 $object->filterBy('product.itemSum.moreThanEqual', 5);
+
                 $object2 = DiscountBuilder::build();
                 $object2->each('totalItems', 5);
                 $object2->limit(0);
