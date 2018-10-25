@@ -90,12 +90,6 @@ class DiscountService implements DiscountServiceContract, Countable {
 
                 // cycle through filters
                 if (is_array($discountObject->getFilterBy())):
-
-                    $this->fail['productIds'] = array();
-                    $this->fail['categoryIds'] = array();
-                    $this->fail['productEquality'] = array();
-                    $this->fail['categoryEquality'] = array();
-
                     foreach ($discountObject->getFilterBy() as $filterKey => $filterType):
                         // if you specify without any filters
                         if (!count($filterType)) return false;

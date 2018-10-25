@@ -120,7 +120,7 @@ class Filter {
             if (is_array($value)):
                 foreach ($value as $propery => $item):
                     if ($key == 'price') $compare = $order->total;
-                    elseif ($key == 'itemSum') $compare = $itemCount;
+                    elseif ($key == 'itemSum') $compare = $this->itemCount;
                     else break;
                     if (!$this->{$propery}($item, $compare)):
                         $this->fail[__FUNCTION__] = true;
@@ -163,7 +163,7 @@ class Filter {
                             $this->success['productEquality'][$mItem][] = $key;
                         endif;
                     endforeach;
-                    if (isset($this->fail['productEquality'][$mItem]) && count($order->items) <= count($this->fail['productEquality'][$mItem])):
+                    if (isset($this->fail['productEquality'][$mItem]) && count($this->order->items) <= count($this->fail['productEquality'][$mItem])):
                         $this->fail['productIds'][] = $mItem;
                     endif;
                 endforeach;
@@ -209,6 +209,7 @@ class Filter {
                 return false;
             }
         }
+        return true;
     }
 
 }
