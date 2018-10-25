@@ -143,11 +143,10 @@ class Filter {
 
     // category
     public function category(Array $filterType) {
-        foreach ($filterType as $key => $value):
+        foreach ($filterType as $key => $value)
             // the ID part
             if ($key == 'id' && strlen($value))
-                return $this->processId('categoryIds', $this->mainCategoryIds, $value);
-        endforeach;
+                $this->processId('categoryIds', $this->mainCategoryIds, $value);
     }
 
     // product
@@ -155,7 +154,7 @@ class Filter {
         foreach ($filterType as $key => $value):
             // the ID part
             if ($key == 'id' && strlen($value)):
-                return $this->processId('productIds', $this->mainProductIds, $value);
+                $this->processId('productIds', $this->mainProductIds, $value);
 
             // the Equality part
             elseif (in_array($key, array('price', 'itemSum')) && is_array($value)):
@@ -176,26 +175,18 @@ class Filter {
                 endforeach;
             endif;
         endforeach;
-
-        return true;
     }
 
     // ids
-    public function processId(String $key, Array $Ids, $value) {
-        if (!isset($this->fail[$key])) $this->fail[$key] = array();
+    public function processId(String $key, Array $ids, $value) {
         $itemId = explode('|', $value);
-        foreach ($itemId as $valueId):
-            if (!in_array($valueId, $Ids)):
-                $this->fail[$key][] = $valueId; // holds all discount ids not found in order
+        foreach ($ids as $productId):
+            if (!in_array($productId, $itemId)):
+                $this->fail[$key][] = $productId;
             else:
-                //print("true $key\n");
-                $this->success[$key][] = $valueId;
+                $this->success[$key][] = $productId;
             endif;
         endforeach;
-        if (count($itemId) <= count($this->fail[$key])):
-            return false;
-        endif;
-        return true;
     }
 
     // final valid product list
@@ -204,12 +195,12 @@ class Filter {
         foreach ($this->order->products as $productObject) {
             foreach ($productObject as $product) {
                 $id = $product->id;
-                if (!in_array($id, $this->success['productIds']) ||
-                    !in_array($product->category, $this->success['categoryIds']) &&
-                    !isset($this->success['productEquality'][$id])) {
-
-                        $validItems[] = $id;
-
+                if (!in_array($id, $this->fail['productIds']) &&
+                    !in_array($product->category, $this->fail['categoryIds']) &&
+                    !isset($this->fail['productEquality'][$id])) {
+                    
+                    // product passed all tests
+                    $validItems[] = $id;
                 }
             }
         }
