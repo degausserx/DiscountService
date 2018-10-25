@@ -79,65 +79,14 @@ class DiscountService implements DiscountServiceContract, Countable {
         return $this;
     }
 
-    // help methods for the filtering to come >>
-    protected function moreThan($discountValue, $orderValue) {
-        return $orderValue > $discountValue;
-    }
-
-    protected function lessThan($discountValue, $orderValue) {
-        return $orderValue < $discountValue;
-    }
-
-    protected function moreThanEqual($discountValue, $orderValue) {
-        return $orderValue >= $discountValue;
-    }
-
-    protected function lessThanEqual($discountValue, $orderValue) {
-        return $orderValue <= $discountValue;
-    }
-
-    protected function equals($discountValue, $orderValue) {
-        return $orderValue == $discountValue;
-    }
-
     private function applyDiscount(Discount $discountObject) {
 
         // first let's see which orders meet the filter criteria for a discount, then worry about the rewards :E
         if ($filter = $discountObject->getFilterBy()) {
             $filterOrders = array_filter($this->orders, function($order) use ($discountObject) {
 
-                // get total items / ids
-                $mainCategories = array();
-                $mainProducts = array();
-                $mainCategoryIds = array();
-                $mainProductIds = array();
-
-                $itemCount = 0;
-                $customer = $order['customer'];
-
-                foreach ($order['products'] as $subitem) {
-                    foreach ($subitem as $item) {
-                        $mainProductIds[] = $id = $item->id;
-                        $mainProducts[$id] = array();
-                        $mainProducts[$id]['category'] = $item->category;
-                        $mainCategoryIds[] = $item->category;
-                    }
-                }
-
-                foreach ($order->items as $item) {
-                    $cat = $item['product-id'];
-                    if (!isset($mainProducts[$cat])) $mainProducts[$cat] = array();
-                    $mainProducts[$cat]['quantity'] = $item['quantity'];
-                    $mainProducts[$cat]['unit-price'] = $item['unit-price'];
-                    $mainProducts[$cat]['total-price'] = $item['total'];
-                    if (!isset($mainCategories[$cat])) $mainCategories[$cat] = array();
-                    if (!isset($mainCategories[$cat]['unit-price'])) $mainCategories[$cat]['unit-price'] = 0;
-                    $mainCategories[$cat]['unit-price'] += $item['total'];
-                    $itemCount += $item['quantity'];
-                }
-
-                $this->success = array();
-                $this->fail = array();
+                $this->discountFilterService->clear();
+                $this->discountFilterService->addItemData($order);
 
                 // cycle through filters
                 if (is_array($discountObject->getFilterBy())):
@@ -150,165 +99,41 @@ class DiscountService implements DiscountServiceContract, Countable {
                     foreach ($discountObject->getFilterBy() as $filterKey => $filterType):
                         // if you specify without any filters
                         if (!count($filterType)) return false;
-
-
-                        // lifetime spend
-                        if ($filterKey == 'lifetimeSpend' && is_array($filterType)):
-                            $lifetimeSpend = $customer->revenue;
-                            foreach ($filterType as $key => $value):
-                                if (!$this->{$key}($value, $lifetimeSpend)):
-                                    $this->fail[$filterKey] = true;
-                                    // lifetime spend requirement failed
-                                else:
-                                    $this->success[$filterKey] = true;
-                                endif;
-                            endforeach;
-
-
-
-                        // order
-                        elseif ($filterKey == 'order' && is_array($filterType)):
-                            foreach ($filterType as $key => $value):
-                                if (is_array($value)):
-                                    foreach ($value as $propery => $item):
-                                        if ($key == 'price') $compare = $order->total;
-                                        elseif ($key == 'itemSum') $compare = $itemCount;
-                                        if (!$this->{$propery}($item, $compare)):
-                                            $this->fail[$filterKey] = true;
-                                            // order has failed
-                                        else:
-                                            $this->success[$filterKey] = true;
-                                        endif;
-                                    endforeach;
-                                endif;
-                            endforeach;
-
-
-
-                        // product
-                        elseif ($filterKey == 'product' && is_array($filterType)):
-                            foreach ($filterType as $key => $value):
-
-                                // the ID part
-                                if ($key == 'id' && $value):
-                                    $this->fail['productIds'] = array();
-                                    $itemId = explode('|', $value);
-                                    foreach ($itemId as $valueId):
-                                        if (!in_array($valueId, $mainProductIds)):
-                                            $this->fail['productIds'][] = $valueId;
-                                            // fail
-                                        else:
-                                            $this->success['productIds'][] = $valueId;
-                                        endif;
-                                    endforeach;
-                                    if (count($itemId) <= count($this->fail['productIds'])):
-                                        return false;
-                                    endif;
-
-
-
-                                // the Equality part
-                                elseif (in_array($key, array('price', 'itemSum')) && $value):
-                                    $arrayItem = ($key == 'price') ? 'unit-price' : 'quantity';
-                                    foreach ($value as $property => $piece):
-                                        $mItem = null;
-                                        foreach ($order->items as $item):
-                                            $mItem = $item['product-id'];
-                                            if (!$this->{$property}($piece, $mainProducts[$mItem][$arrayItem])):
-                                                $this->fail['productEquality'][$mItem][] = $key;
-                                                // fail
-                                            else:
-                                                $this->success['productEquality'][$mItem][] = $key;
-                                            endif;
-                                        endforeach;
-                                        if (isset($this->fail['productEquality'][$mItem]) && count($order->items) <= count($this->fail['productEquality'][$mItem])):
-                                            $this->fail['productIds'][] = $mItem;
-                                        endif;
-                                    endforeach;
-
-
-
-                                endif;
-                            endforeach;
-                        // category
-                        elseif ($filterKey == 'category' && is_array($filterType)):
-                            foreach ($filterType as $key => $value):
-
-
-
-                                // the ID part
-                                if ($key == 'id' && $value):
-                                    $this->fail['categoryIds'] = array();
-                                    $itemId = explode('|', $value);
-                                    foreach ($itemId as $valueId):
-                                        if (!in_array($valueId, $mainCategoryIds)):
-                                            $this->fail['categoryIds'][] = $valueId;
-                                            // fail
-                                        else:
-                                            $this->success['categoryIds'][] = $valueId;
-                                        endif;
-                                    endforeach;
-                                    if (count($itemId) <= count($this->fail['categoryIds'])):
-                                        return false;
-                                    endif;
-                                endif;
-
-
-
-                            endforeach;
-                        else:
-                            // no valid filter type
+                        if (method_exists($this->discountFilterService, $filterKey))
+                            $this->discountFilterService->{$filterKey}($filterType);
+                        else
                             return false;
-                        endif;
                     endforeach;
 
 
-                    // final filtering of valid products
-                    $goodItems = array();
-
                     //item filtering after knmowing what fails.
-                    foreach ($order->products as $productObject) {
-                        foreach ($productObject as $product) {
-                            $id = $product->id;
-                            if (!in_array($id, $this->fail['productIds']) &&
-                                !in_array($product->category, $this->fail['categoryIds']) &&
-                                !isset($this->fail['productEquality'][$id])) {
-                                
-                                // product passed all tests
-                                $goodItems[] = $id;
-                            }
+                    $validProducts = $this->discountFilterService->filterValidProducts();
 
-                        }
-                    }
 
+                    // fail checks
                     // validate the product sum, now that we have a list of valid products
                     if (isset($discountObject->getFilterBy()['product']['productSum'])) {
                         if (($productSum = $discountObject->getFilterBy()['product']['productSum']) !== null) {
-                            foreach ($productSum as $property => $piece) {
-                                if (!$this->{$property}($piece, count($goodItems))) {
-                                    return false;
-                                    // fail
-                                }
+                            if (!$this->discountFilterService->validProductSum($productSum, count($validProducts))) {
+                                return false;
                             }
                         }
                     }
 
                     //compare with count of orders->items
-                    if (!count($goodItems)) {
-                        if (!isset($this->success['lifetimeSpend']) && !isset($this->success['order'])) {
-                            return false;
-                        }
+                    if (!count($validProducts)) {
+                        if ($this->discountFilterService->noValidOptions()) return false;
                     }
 
                     // invalidate last of questionable items
-                    if (isset($this->fail['order'])) return false;
-                    if (isset($this->fail['lifetimeSpend'])) return false;
+                    if (!$this->discountFilterService->orderStatus()) return false;
+                    if (!$this->discountFilterService->lifetimeSpendStatus()) return false;
 
 
                     // the discount is good for this order, apply the reward
                     if ($rewardType = $discountObject->getRewardType()) {
                         if (method_exists($this->discountRewardService, $rewardType)) {
-                            $this->discountRewardService->{$rewardType}($order, $goodItems);
+                            $this->discountRewardService->{$rewardType}($order, $validProducts);
                         }
                     }
 
