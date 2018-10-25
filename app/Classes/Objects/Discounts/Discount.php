@@ -73,7 +73,7 @@ class Discount {
         }
 
         // merge DiscountBuilder requests
-        $this->discountBuilder = $this->combineQueries($discountBuilders);
+        if (count($functions)) $this->discountBuilder = $this->combineQueries($discountBuilders);
 
         $this->function = null;
         $this->addedFunctions = array();

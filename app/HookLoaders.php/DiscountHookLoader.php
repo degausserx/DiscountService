@@ -32,7 +32,7 @@ use App\Objects\Discounts\Discount;
     //                  'lessThan' => '',               filter by equality: less than N // 
     //                  'equals' => '',                 filter by equality: equal to N  //
     //              'productSum' => ''
-    //                  'moreThan' => '',               filter by equality: more than N // total items per id
+    //                  'moreThan' => '',               filter by equality: more than N // total unique products per order
     //                  'lessThan' => '',               filter by equality: less than N // 
     //                  'equals' => '',                 filter by equality: equal to N  //
     //          'category' =>
@@ -78,12 +78,14 @@ class DiscountHookLoader {
                 $object->rewardNumber(1);
                 $object->applyRewardTo('productLine');
                 $object->filterBy('category.id', 2);
+                $object->filterBy('product.itemSum.moreThanEqual');
 
                 $object2 = DiscountBuilder::build();
                 $object2->each('totalItems', 5);
                 $object2->limit(0);
 
-                return $object->name('Buy51Free')->build($object2)->description('For every product of category Switches, when you buy five, you get a sixth for free');
+                return $object->name('Buy51Free')->build($object2)
+                ->description('For every product of category Switches, when you buy five, you get a sixth for free');
             }),
 
 
@@ -92,36 +94,6 @@ class DiscountHookLoader {
             // If you buy two or more products of category Tools, you get a 20% discount on the cheapest product
             new DiscountOnCheapestFromTwo(DiscountBuilder::build()->name('newNameForDiscount')),
 
-/*
-            // METHOD 4: the merge method!!!!
-            // object functionality allows one instance to take the values of another.
-            // This happens because the DiscountBuilder class uses composition, essentially feeding off anything you throw at it
-            // we can combine this with the build() method to create and inject any needed objects
-            // only values which have been set at least once, are passed on
-
-           new Discount(function() {
-                $filter = DiscountBuilder::build();
-                $filter->filterBy('order.price.moreThanEqual', 1000);
-                $filter->filterBy('category.id', 7);
-                $filter->rewardType('discount');
-                $filter->rewardNumber('5');
-                $filter->applyRewardTo('order');
-                $filter->limit(5);
-
-                $criteria = DiscountBuilder::build();
-                $criteria->limit(1);
-
-                // you can inject more builders at any point:
-                return DiscountBuilder::build($filter)->name('Some name')->build($criteria)->name('new name')
-                ->description('RANDOM CAPS BASED CATEGORY');
-
-            }),
-
-            // METHOD 5: the ultimate method?????
-            // a combination of 1 and 4, allowing you to create more DiscountBuilders available from class methods or arrays (shared amongst the class),
-            // then combining what is needed with some build() calls.
-            // I think method 3 can also be powerful
-            */
         );
 
     }

@@ -131,8 +131,6 @@ class DiscountService implements DiscountServiceContract, Countable {
                     $mainProducts[$cat]['unit-price'] = $item['unit-price'];
                     $mainProducts[$cat]['total-price'] = $item['total'];
                     if (!isset($mainCategories[$cat])) $mainCategories[$cat] = array();
-                    if (!isset($mainCategories[$cat]['quantity'])) $mainCategories[$cat]['quantity'] = 0;
-                    $mainCategories[$cat]['quantity'] += $item['quantity'];
                     if (!isset($mainCategories[$cat]['unit-price'])) $mainCategories[$cat]['unit-price'] = 0;
                     $mainCategories[$cat]['unit-price'] += $item['total'];
                     $itemCount += $item['quantity'];
@@ -274,8 +272,7 @@ class DiscountService implements DiscountServiceContract, Countable {
                             $id = $product->id;
                             if (!in_array($id, $this->fail['productIds']) &&
                                 !in_array($product->category, $this->fail['categoryIds']) &&
-                                !isset($this->fail['productEquality'][$id]) &&
-                                !isset($this->fail['categoryEquality'][$id])) {
+                                !isset($this->fail['productEquality'][$id])) {
                                 
                                 // product passed all tests
                                 $goodItems[] = $id;
