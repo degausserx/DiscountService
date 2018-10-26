@@ -8,6 +8,7 @@ use App\Contracts\DiscountServiceContainerContract;
 use App\HookLoaders\DiscountHookLoader;
 use App\DataModels\Order;
 use Redirect;
+use Exception;
 
 class DiscountsController extends Controller {
 
@@ -62,7 +63,14 @@ class DiscountsController extends Controller {
     public function applyDiscount(Request $request) {
         $data = $request->all();
 
-        $this->discountContainer->addOrder(Order::make($data));
+        try {
+            $this->discountContainer->addOrder(Order::make($data));
+        } catch (Exception $e) {
+            return response()->json(['success' => 0]);
+            die();
+        }
+
+
         $this->discountContainer->generate();
 
         return response()->json($this->discountContainer->getOrders());

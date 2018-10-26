@@ -12,13 +12,16 @@
 DiscountService is a small online service which takes a collection of orders in json format, and outputs them with applied discounts. There isn't too much boilerplate
 in laravel, but I'll provide an overview on the project
 
-- Two routes are used, one as an optional view to send the request, and /discounts to display processed data.
+- Three routes are used, one as an optional view to send the request, and /discounts to display processed data.
+- The third is /api/discounts, where you can pass in an order and get the returned value in json format.
+- Be sure to mark the Content-Type of the request as application/json, and it should be fine.
+
 - One controller is used, named DiscountsController. 
 - App\Containers\DiscountContainer is used as an injected service for the controller, acting as bridge between the controller and service.
 - App\Services\DiscountService provides the discount service through container. It collects all resources and carries out it's tasks
 - App\Classes\Datamodels\ are a small concept, providing an object soley for specific data, perhaps like a struct in swift?
 - App\Classes\Builders\DiscountBuilder is a class defining a discounts properties
-- App\Classes\Objects\Discounts\Discount requires an instance of the previous object, and can then process orders
+- App\Classes\Objects\Discounts\Discount requires an instance of the previous object
 - DiscountOnCheapestFromTwo is an extension of Discount, used as an example
 - App\HookLoaders\DiscountHookLoader contains defined discounts to be loaded by the DiscountContainer. This load method can be changed
 
