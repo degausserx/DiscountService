@@ -17,7 +17,6 @@
                 <p>Select JSON files to upload</p>
             </div>
             <input type="file" name="json_files[]" multiple="multiple" />
-            {!! csrf_field() !!}
             <div>
                 <input type="submit" value="Upload"/>
             </div>

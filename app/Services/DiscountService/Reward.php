@@ -24,9 +24,6 @@ class Reward {
             // discounts can be applied anywhere. we'll default to the order
             $applyRewardTo = $this->discount->getApplyRewardTo() ?? 'order';
 
-            // not used with discounts yet, but ready to integrate
-            $limit = $this->discount->getLimit();
-
             if ($applyRewardTo == 'order') {
                 $this->processOrder($order, $number);
             }
@@ -76,16 +73,22 @@ class Reward {
     public function processCheapestItem(Order $order, Array $data, $reward, $property) {
         $items = &$order->items;
         
-        usort($items, function($a, $b) {
-            if ($a['unit-price'] == $b['unit-price']) return 0;
-            return ($a['unit-price'] < $b['unit-price']) ? -1 : 1;
+        // sort from cheapest to most expensive
+        usort($items, function($a, $b) use ($property) {
+            if ($a[$property] == $b[$property]) return 0;
+            return ($a[$property] < $b[$property]) ? -1 : 1;
         });
 
+        // for each product in the order
         foreach ($items as &$item) {
             if (in_array($item['product-id'], $data)) {
                 $minus = $this->getDiscount($item[$property], $reward);
-                $item[$property] -= $minus;
-                $item[$property] = number_format($item[$property], 2);
+
+                // modify price of product
+                $item['total'] -= $minus;
+                $item['total'] = number_format($item['total'], 2);
+
+                // apply to order total
                 $order->total = $order->total - $minus;
                 break;
             }
@@ -96,6 +99,7 @@ class Reward {
     public function item(Order $order, Array $data) {
         if ($number = $this->discount->getRewardNumber()) {
             
+            // only supported value of 'applyTo' for item rewards at this moment
             $applyRewardTo = 'productLine';
             $added = false;
 
@@ -107,23 +111,27 @@ class Reward {
             foreach ($order->items as &$item) {
                 if (in_array($item['product-id'], $data)) {
                     
-                    if ($totalItems) {
+                    if (isset($totalItems)) {
                         $quantity = $item['quantity'];
-                        $addedItems = floor($quantity / $totalItems);
+                        $addedItems = floor(($quantity / $totalItems) * $number);
                     }
 
-                    elseif ($totalSpent) {
+                    elseif (isset($totalSpent)) {
                         $totalPrice = $item['total'];
-                        $addedItems = floor($totalPrice / $totalSpent);
+                        $addedItems = floor(($quantity / $totalSpent) * $number);
+                    }
+
+                    // no 'each' data supplied
+                    else {
+                        $addedItems = $number;
                     }
   
                     // the number of times this can be applied
                     if ($addedItems > $limit && $limit > 0) $addedItems = $limit;
-                    if ($totalItems) {
-                        $item['quantity'] += $addedItems;
-                        $item['quantity'] = strval($item['quantity']);
-                        if ($addedItems > 0) $added = true;
-                    }
+
+                    $item['quantity'] += $addedItems;
+                    $item['quantity'] = strval($item['quantity']);
+                    if ($addedItems > 0) $added = true;
 
                 }
             }

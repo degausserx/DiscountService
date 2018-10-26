@@ -20,7 +20,7 @@ class DiscountsController extends Controller {
 
     // return upload file page
     public function upload() {
-        return view('components.upload_file');
+        return view('layouts.upload_file');
     }
 
     // showresult - process and display discounted orders
@@ -29,7 +29,7 @@ class DiscountsController extends Controller {
         // get the validated json files
         $validated = $request->validated()['json_files'];
 
-        // send in an array of discounts if you'd like. this is the default as per DiscountService: 
+        // send in an array of discounts
         $this->discountContainer->setDiscounts((new DiscountHookLoader())->load());
 
         // add orders to discountservice container

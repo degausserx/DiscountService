@@ -10,7 +10,6 @@ class Filter {
     private $fail = array();
     private $order;
 
-    private $mainCategories = array();
     private $mainProducts = array();
     private $mainCategoryIds = array();
     private $mainProductIds = array();
@@ -36,7 +35,6 @@ class Filter {
         $this->itemCount = 0;
         $this->customer = $order['customer'];
 
-        $this->mainCategories = array();
         $this->mainProducts = array();
         $this->mainCategoryIds = array();
         $this->mainProductIds = array();
@@ -62,7 +60,6 @@ class Filter {
         $this->fail['productIds'] = array();
         $this->fail['categoryIds'] = array();
         $this->fail['productEquality'] = array();
-        $this->fail['categoryEquality'] = array();
 
     }
 
