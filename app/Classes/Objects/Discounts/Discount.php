@@ -8,9 +8,6 @@ use Exception;
 
 class Discount {
 
-    // orders
-    private $order;
-
     // callable
     private $function;
     private $addedFunctions = array();
@@ -40,23 +37,22 @@ class Discount {
 
     }
 
+    // for now we only really expect up to 2 functions to be present, but let's make this future ready
+    final private function combineQueries(Array $discountBuilders) {
+        $builder = DiscountBuilder::build($discountBuilders[0]);
+
+        for ($x = 0; $x < count($discountBuilders) - 1; $x++) {
+            $builder = $builder->build($discountBuilders[$x + 1]);
+        }
+        return $builder;
+    }
+
     // add function from derived classes. idk if this is better than making $functions protected
-    // this does give me control on making sure the function sent to the object is called last, if at all
     final protected function addDiscount($discount = null) {
         if (!is_callable($discount) && !($discount instanceof DiscountBuilder)) { 
             throw new Exception("Argument mismatch upon object instantiation");
         }
         $this->addedFunctions[] = $discount;
-    }
-
-    // get data
-    final public function getData() {
-
-        if ($this->function || !empty($this->addedFunctions)) {
-            $this->processBuilders();
-        }
-
-        return $this->discountBuilder->getData();
     }
 
     //handle unwrapping and adding discount builders
@@ -107,16 +103,6 @@ class Discount {
         if (isset($data['filterBy'])) {
             $this->filterBy = $data['filterBy'];
         }
-    }
-
-    // for now we only really expect up to 2 functions to be present, but let's make this future ready
-    final private function combineQueries(Array $discountBuilders) {
-        $builder = DiscountBuilder::build($discountBuilders[0]);
-
-        for ($x = 0; $x < count($discountBuilders) - 1; $x++) {
-            $builder = $builder->build($discountBuilders[$x + 1]);
-        }
-        return $builder;
     }
 
     // getters
