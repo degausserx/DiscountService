@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\OrderRequest;
+use Illuminate\Http\Request;
 use App\Contracts\DiscountServiceContainerContract;
 use App\HookLoaders\DiscountHookLoader;
 use App\DataModels\Order;
@@ -16,6 +17,8 @@ class DiscountsController extends Controller {
     // constructor
     public function __construct(DiscountServiceContainerContract $discountContainer) {
         $this->discountContainer = $discountContainer;
+        // send in an array of discounts
+        $this->discountContainer->setDiscounts((new DiscountHookLoader())->load());
     }
 
     // return upload file page
@@ -28,9 +31,6 @@ class DiscountsController extends Controller {
 
         // get the validated json files
         $validated = $request->validated()['json_files'];
-
-        // send in an array of discounts
-        $this->discountContainer->setDiscounts((new DiscountHookLoader())->load());
 
         // add orders to discountservice container
         foreach ($validated as $file) {
@@ -57,6 +57,15 @@ class DiscountsController extends Controller {
         // no orders found
         return Redirect::back()->withErrors('Invalid data');
 
+    }
+
+    public function applyDiscount(Request $request) {
+        $data = $request->all();
+
+        $this->discountContainer->addOrder(Order::make($data));
+        $this->discountContainer->generate();
+
+        return response()->json($this->discountContainer->getOrders());
     }
 
 }

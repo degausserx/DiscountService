@@ -13,3 +13,4 @@
 
 Route::get('/', 'DiscountsController@upload');
 Route::post('/discounts', 'DiscountsController@showResult')->name('discount.filter');
+Route::post('/api/discounts', 'DiscountsController@applyDiscount');
