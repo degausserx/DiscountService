@@ -15,19 +15,21 @@ class DiscountsController extends Controller {
     // self injections
     protected $discountContainer;
 
+
     // constructor
     public function __construct(DiscountServiceContainerContract $discountContainer) {
         $this->discountContainer = $discountContainer;
-        // send in an array of discounts
         $this->discountContainer->setDiscounts((new DiscountHookLoader())->load());
     }
 
-    // return upload file page
+
+    // web - return upload file page
     public function upload() {
         return view('layouts.upload_file');
     }
 
-    // showresult - process and display discounted orders
+    
+    // web - showresult - process and display discounted orders
     public function showResult(OrderRequest $request) {
 
         // get the validated json files
@@ -36,7 +38,10 @@ class DiscountsController extends Controller {
         // add orders to discountservice container
         foreach ($validated as $file) {
             if ($order = json_decode(file_get_contents($file->getRealPath()), true)) {
-                $this->discountContainer->addOrder(Order::make($order));
+                if (!$this->addOrder($order)) {
+                    return response()->json(['success' => 0]);
+                    die();
+                }
             }
         }
 
@@ -46,34 +51,45 @@ class DiscountsController extends Controller {
         // get processed orders
         $ordersWithDiscountApplied = $this->discountContainer->getOrders();
 
-        // clear orders in discount container
         // $this->discountContainer->clearOrders();
-
-        // clear discounts in discounts container
         // $this->discountContainer->clearDiscounts();
 
         // response
         if (!empty($ordersWithDiscountApplied)) return response()->json($ordersWithDiscountApplied);
 
         // no orders found
-        return Redirect::back()->withErrors('Invalid data');
+        return Redirect::back()->withErrors('No orders found');
 
     }
 
+
+    // api method
     public function applyDiscount(Request $request) {
         $data = $request->all();
 
-        try {
-            $this->discountContainer->addOrder(Order::make($data));
-        } catch (Exception $e) {
-            return response()->json(['success' => 0]);
-            die();
+        if ($this->addOrder($data)) {
+
+            $this->discountContainer->generate();
+
+            return response()->json($this->discountContainer->getOrders());
+
+        } else {
+
+            // request failed
+            response()->json(['success' => 0]);
+
         }
+    }
 
 
-        $this->discountContainer->generate();
-
-        return response()->json($this->discountContainer->getOrders());
+    // add order to discountcontainer method
+    public function addOrder($data) {
+        try {
+            $this->discountContainer->addOrder(new Order($data));
+        } catch (Exception $e) {
+            return false;
+        }
+        return true;
     }
 
 }

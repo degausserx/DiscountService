@@ -2,51 +2,74 @@
 
 namespace App\Services\DiscountService;
 
+use App\Repositories\CustomerRepository;
+use App\Repositories\ProductRepository;
 use App\Objects\Discounts\Discount;
 use App\Datamodels\Order;
 
 class Filter {
 
-    private $fail = array();
+    private $customerRepository;
+    private $productRepository;
+
+    private $fail;
     private $order;
 
-    private $mainProducts = array();
-    private $mainCategoryIds = array();
-    private $mainProductIds = array();
+    private $mainProducts;
+    private $mainCategoryIds;
+    private $mainProductIds;
     private $itemCount;
     private $customer;
+    private $products;
 
-    public function __construct() {
-
+    public function __construct(CustomerRepository $customer, ProductRepository $product) {
+        $this->customerRepository = $customer;
+        $this->productRepository = $product;
     }
-
-    public function clear() {
-        $this->fail = array();
-        $this->order = null;
-    }
-
 
     // setup some data to use with filtering
     public function addItemData(Order $order) {
-
-        // set current order;
+        
+        // declarations
         $this->order = $order;
-
+        $this->products = array();
+        $this->customer = null;
+        $this->fail = array();
         $this->itemCount = 0;
-        $this->customer = $order['customer'];
 
         $this->mainProducts = array();
         $this->mainCategoryIds = array();
         $this->mainProductIds = array();
 
-        foreach ($order['products'] as $subitem) {
-            foreach ($subitem as $item) {
+        $this->fail['productIds'] = array();
+        $this->fail['categoryIds'] = array();
+        $this->fail['productEquality'] = array();
+
+        try {
+            // get customer information from repo
+            $this->customer = $this->customerRepository->findById($order->id);
+            
+            // get product information from repo
+            $this->products = array();
+            foreach ($order->items as $item) {
+                $this->products[] = $this->productRepository->findById($item['product-id']);
+            }
+        }
+        
+        catch(Exception $e) {
+            return false;
+        }
+
+
+        foreach ($this->products as $object) {
+            foreach ($object as $item) {
                 $this->mainProductIds[] = $id = $item->id;
                 $this->mainProducts[$id] = array();
                 $this->mainProducts[$id]['category'] = $item->category;
                 $this->mainCategoryIds[] = $item->category;
             }
         }
+
 
         foreach ($order->items as $item) {
             $id = $item['product-id'];
@@ -57,20 +80,21 @@ class Filter {
             $this->itemCount += $item['quantity'];
         }
 
-        $this->fail['productIds'] = array();
-        $this->fail['categoryIds'] = array();
-        $this->fail['productEquality'] = array();
+        return true;
 
     }
 
+    // returns true if order hasn't failed
     public function orderStatus() {
         return !isset($this->fail['order']);
     }
 
+    // returns true if revenue flters haven't failed
     public function lifetimeSpendStatus() {
         return !isset($this->fail['lifetimeSpend']);
     }
 
+    // returns true if any of the product filters failed
     public function validOptions() {
         if (count($this->fail['productEquality']) ||
             count($this->fail['productIds']) ||
@@ -80,6 +104,8 @@ class Filter {
         return true;
     }
 
+
+    // functions to compare values
     protected function moreThan($discountValue, $orderValue) {
         return $orderValue > $discountValue;
     }
@@ -99,6 +125,9 @@ class Filter {
     protected function equals($discountValue, $orderValue) {
         return $orderValue == $discountValue;
     }
+
+    // main filters
+    // add the ids of all products which fail a filter to $this->fail['productIds']
 
     // lifetime revenue
     public function lifetimeSpend(Array $filterType) {
@@ -163,6 +192,16 @@ class Filter {
         endforeach;
     }
 
+    // sum of unique products
+    public function validProductSum(Array $productSum, Int $count) {
+        foreach ($productSum as $property => $piece) {
+            if (!$this->{$property}($piece, $count)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // ids
     public function processId(String $key, Array $ids, $value) {
         $itemId = explode('|', $value);
@@ -176,7 +215,7 @@ class Filter {
     // final valid product list
     public function filterValidProducts() {
         $validItems = array();
-        foreach ($this->order->products as $productObject) {
+        foreach ($this->products as $productObject) {
             foreach ($productObject as $product) {
                 $id = $product->id;
                 if (!in_array($id, $this->fail['productIds']) &&
@@ -190,15 +229,6 @@ class Filter {
         }
 
         return $validItems;
-    }
-
-    public function validProductSum(Array $productSum, Int $count) {
-        foreach ($productSum as $property => $piece) {
-            if (!$this->{$property}($piece, $count)) {
-                return false;
-            }
-        }
-        return true;
     }
 
 }

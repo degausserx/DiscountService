@@ -5,7 +5,8 @@ namespace App\Services\DiscountService;
 use App\Contracts\DiscountServiceContract;
 use App\Services\DiscountService\Rewards;
 use App\Services\DiscountService\Filter;
-use App\HookLoaders\DiscountHookLoader;
+use App\Repositories\CustomerRepository;
+use App\Repositories\ProductRepository;
 use App\Datamodels\Order;
 use App\Objects\Discounts\Discount;
 use Countable;
@@ -21,10 +22,13 @@ class DiscountService implements DiscountServiceContract, Countable {
     private $discounts = array();
     private $orders = array();
 
+    private $customerRepository;
+    private $productRepository;
 
-    public function __constuct() {
-        $this->discountRewardService = new Rewards();
-        $this->discountFilterService = new Filter();
+
+    public function __construct() {
+        $this->customerRepository = new CustomerRepository();
+        $this->productRepository = new ProductRepository();
     }
 
     public function count() {
@@ -67,10 +71,11 @@ class DiscountService implements DiscountServiceContract, Countable {
     // apply discounts to all $orders
     public function applyDiscounts() {
 
+        $this->discountFilterService = new Filter($this->customerRepository, $this->productRepository);
+
         // send individual discount to next function
         foreach ($this->discounts as $discount) {
             $this->discountRewardService = new Reward($discount);
-            $this->discountFilterService = new Filter($discount);
             $this->applyDiscount($discount);
         }
 
@@ -82,88 +87,83 @@ class DiscountService implements DiscountServiceContract, Countable {
 
         // first let's see which orders meet the filter criteria for a discount, then worry about the rewards :E
         if ($filter = $discountObject->getFilterBy()) {
-            $filterOrders = array_filter($this->orders, function($order) use ($discountObject) {
 
-                $this->discountFilterService->clear($order);
-                $this->discountFilterService->addItemData($order);
+            // looping through like this so the filtered array is there if needed
+            if (is_array($filter)) $filterOrders = array_filter($this->orders, function($order) use ($discountObject) {
 
-                // cycle through filters
-                if (is_array($discountObject->getFilterBy())):
+                // if there are problems getting necessary product/customer data, return false
+                if (!$this->discountFilterService->addItemData($order)) {
+                    return false;
+                }
 
-                    foreach ($discountObject->getFilterBy() as $filterKey => $filterType):
-                        // if you specify without any filters
-                        if (!count($filterType)) return false;
+                // loop and call relavent method
+                foreach ($discountObject->getFilterBy() as $filterKey => $filterType):
+                    // if you specify without any filters
+                    if (!count($filterType)) return false;
 
-                        if (is_array($filterType)):
+                    if (is_array($filterType)):
 
-                            // lifetime spend
-                            if ($filterKey == 'lifetimeSpend'):
-                                if (!$this->discountFilterService->lifetimeSpend($filterType)):
-                                    return false;
-                                endif;
-
-                            // order
-                            elseif ($filterKey == 'order'):
-                                if (!$this->discountFilterService->order($filterType)):
-                                    return false;
-                                endif;
-
-                            // product
-                            elseif ($filterKey == 'product'):
-                                $this->discountFilterService->product($filterType);
-
-                            // category
-                            elseif ($filterKey == 'category'):
-                                $this->discountFilterService->category($filterType);
-                            else:
-                                // no valid filter type
+                        // lifetime spend
+                        if ($filterKey == 'lifetimeSpend'):
+                            if (!$this->discountFilterService->lifetimeSpend($filterType)):
                                 return false;
                             endif;
 
-                        endif;
-                    endforeach;
-
-
-                    // final filtering of valid products
-                    $goodItems = $this->discountFilterService->filterValidProducts();
-
-                    // validate the product sum, now that we have a list of valid products
-                    if (isset($discountObject->getFilterBy()['product']['productSum'])) {
-                        if (($productSum = $discountObject->getFilterBy()['product']['productSum']) !== null) {
-                            if (!$this->discountFilterService->validProductSum($productSum, count($goodItems))) {
+                        // order
+                        elseif ($filterKey == 'order'):
+                            if (!$this->discountFilterService->order($filterType)):
                                 return false;
-                            }
-                        }
-                    }
+                            endif;
 
-                    //compare with count of orders->items
-                    if (!count($goodItems)) {
-                        if (!$this->discountFilterService->validOptions()) {
+                        // product
+                        elseif ($filterKey == 'product'):
+                            $this->discountFilterService->product($filterType);
+
+                        // category
+                        elseif ($filterKey == 'category'):
+                            $this->discountFilterService->category($filterType);
+                        else:
+                            // no valid filter type
+                            return false;
+                        endif;
+
+                    endif;
+                endforeach;
+
+
+                // final filtering of valid products
+                $goodItems = $this->discountFilterService->filterValidProducts();
+
+                // validate the product sum, now that we have a list of valid products
+                if (isset($discountObject->getFilterBy()['product']['productSum'])) {
+                    if (($productSum = $discountObject->getFilterBy()['product']['productSum']) !== null) {
+                        if (!$this->discountFilterService->validProductSum($productSum, count($goodItems))) {
                             return false;
                         }
                     }
+                }
 
-
-                    // invalidate last of questionable items
-                    if (!$this->discountFilterService->orderStatus() || !$this->discountFilterService->lifetimeSpendStatus()) {
+                //compare with count of orders->items
+                if (!count($goodItems)) {
+                    if (!$this->discountFilterService->validOptions()) {
                         return false;
                     }
+                }
 
-
-                    // the discount is good for this order, apply the reward
-                    if ($rewardType = $discountObject->getRewardType()) {
-                        if (method_exists($this->discountRewardService, $rewardType)) {
-                            $this->discountRewardService->{$rewardType}($order, $goodItems);
-                        }
-                    }
-
-                    return true;
-
-                else:
-
+                // invalidate last of questionable items
+                if (!$this->discountFilterService->orderStatus() || !$this->discountFilterService->lifetimeSpendStatus()) {
                     return false;
+                }
 
-                endif;
+                // the discount is good for this order, apply the reward
+                if ($rewardType = $discountObject->getRewardType()) {
+                    if (method_exists($this->discountRewardService, $rewardType)) {
+                        $this->discountRewardService->{$rewardType}($order, $goodItems);
+                    }
+                }
+
+                return true;
+
             });
 
         }

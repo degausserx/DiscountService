@@ -51,7 +51,7 @@ class DiscountServiceContainer implements DiscountServiceContainerContract, Coun
 
     // manage the orders
     public function addOrder(Order $order) {
-        $this->orders[] = $this->orderRepository->remake($order);
+        $this->orders[] = $order;
     }
 
     public function addOrders(Array $orders) {

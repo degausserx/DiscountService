@@ -13,7 +13,7 @@ class DataModel implements ArrayAccess {
     protected $required = array();
 
     // constructor
-    protected function __construct(Array $data = array()) {
+    public function __construct(Array $data = array()) {
 
         foreach ($data as $key => $value) {
             // valid propert can be created
