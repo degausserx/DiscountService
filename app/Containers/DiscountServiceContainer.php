@@ -2,9 +2,10 @@
 
 namespace App\Containers;
 
+use App\Services\DiscountService\DiscountService;
 use App\Contracts\DiscountServiceContainerContract;
-use App\Contracts\Repositories\OrderRepositoryContract;
-use App\Contracts\DiscountServiceContract;
+use App\Contracts\Repositories\CustomerRepositoryContract;
+use App\Contracts\Repositories\ProductRepositoryContract;
 use App\DataModels\Order;
 use App\Objects\Discounts\Discount;
 use Countable;
@@ -15,13 +16,12 @@ class DiscountServiceContainer implements DiscountServiceContainerContract, Coun
     protected $discountService;
 
     // saved resources
-    protected $orderRepository;
     protected $discounts = array();
     protected $orders = array();
 
-    public function __construct(OrderRepositoryContract $orderRepository, DiscountServiceContract $discountService) {
-        $this->orderRepository = $orderRepository;
-        $this->discountService = $discountService;
+    public function __construct(CustomerRepositoryContract $customerRepository, ProductRepositoryContract $productRepository) {
+        $this->discountService = new DiscountService();
+        $this->discountService->setRepositories($customerRepository, $productRepository);
     }
 
     public function count() {

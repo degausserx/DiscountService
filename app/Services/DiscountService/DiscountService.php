@@ -2,18 +2,17 @@
 
 namespace App\Services\DiscountService;
 
-use App\Contracts\DiscountServiceContract;
-use App\Services\DiscountService\Rewards;
-use App\Services\DiscountService\Filter;
 use App\Repositories\CustomerRepository;
 use App\Repositories\ProductRepository;
+use App\Services\DiscountService\Rewards;
+use App\Services\DiscountService\Filter;
 use App\Datamodels\Order;
 use App\Objects\Discounts\Discount;
 use Countable;
 
 // just using 1 file to quicken things up. Could be a good idea to make a DiscountService folder
 // so that you can split the logic of filtering orders / products, working out the reward, apply it, etc
-class DiscountService implements DiscountServiceContract, Countable {
+class DiscountService implements Countable {
 
     // dependencies
     private $discountRewardService;
@@ -25,10 +24,9 @@ class DiscountService implements DiscountServiceContract, Countable {
     private $customerRepository;
     private $productRepository;
 
-
-    public function __construct() {
-        $this->customerRepository = new CustomerRepository();
-        $this->productRepository = new ProductRepository();
+    public function setRepositories(CustomerRepository $customerRepository, ProductRepository $productRepository) {
+        $this->customerRepository = $customerRepository;
+        $this->productRepository = $productRepository;
     }
 
     public function count() {
